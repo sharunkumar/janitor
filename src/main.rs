@@ -12,7 +12,6 @@ fn main() {
     loop {
         let config = ini!(downloads_path.join("janitor.ini").to_str().unwrap());
 
-        // get the first value in config["destination"]
         let desination = config["destination"]["default"].clone().unwrap();
         let destination_path = Path::new(&desination);
 
