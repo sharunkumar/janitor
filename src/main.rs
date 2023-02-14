@@ -16,9 +16,7 @@ fn main() {
         let desination = config["destination"]["default"].clone().unwrap();
         let destination_path = Path::new(&desination);
 
-        if !destination_path.exists() {
-            fs::create_dir_all(destination_path).unwrap();
-        }
+        fs::create_dir_all(destination_path).unwrap();
 
         for file in config["sources"]
             .values()
