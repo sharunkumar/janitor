@@ -32,7 +32,7 @@ fn main() {
 
                 fs::remove_file(downloads_path.join(&file_str)).unwrap();
 
-                println!("Moved {} to {}.", &file_str, &desination);
+                println!("Moved {} to {}", &file_str, &desination);
             }
         }
 
