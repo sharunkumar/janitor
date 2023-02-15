@@ -6,10 +6,9 @@ use std::thread;
 use std::time::Duration;
 
 fn main() {
-    let user_dirs = UserDirs::new().unwrap();
-    let downloads_path = user_dirs.download_dir().unwrap();
-
     loop {
+        let user_dirs = UserDirs::new().unwrap();
+        let downloads_path = user_dirs.download_dir().unwrap();
         let config = ini!(downloads_path.join("janitor.ini").to_str().unwrap());
 
         let desination = config["destination"]["default"].clone().unwrap();
