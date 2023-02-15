@@ -24,15 +24,22 @@ fn main() {
             let file_str = file.to_owned();
 
             if downloads_path.join(&file_str).exists() {
-                fs::copy(
+                match fs::copy(
                     downloads_path.join(&file_str),
                     destination_path.join(&file_str),
-                )
-                .unwrap();
-
-                fs::remove_file(downloads_path.join(&file_str)).unwrap();
-
-                println!("Moved {} to {}", &file_str, &desination);
+                ) {
+                    Ok(_) => {
+                        fs::remove_file(downloads_path.join(&file_str)).unwrap();
+                        println!("Moved {} to {}", &file_str, &desination);
+                    }
+                    Err(_) => {
+                        println!(
+                            "Failed to copy {} to {}. Waiting for 10 seconds...",
+                            &file_str, &desination
+                        );
+                        thread::sleep(Duration::from_secs(10));
+                    }
+                }
             }
         }
 
