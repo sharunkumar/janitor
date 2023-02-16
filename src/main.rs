@@ -30,13 +30,13 @@ fn main() {
                 ) {
                     Ok(_) => {
                         fs::remove_file(downloads_path.join(&file_str)).unwrap();
-                        notify(
+                        app_message(
                             "Moved",
                             format!("Moved {} to {}", &file_str, &desination).as_str(),
                         );
                     }
                     Err(_) => {
-                        notify(
+                        app_message(
                             "Failed",
                             format!("Failed to move {} to {}", &file_str, &desination).as_str(),
                         );
@@ -51,7 +51,7 @@ fn main() {
     }
 }
 
-fn notify(summary: &str, message: &str) {
+fn app_message(summary: &str, message: &str) {
     println!("{}", message);
     Notification::new()
         .appname("Janitor")
