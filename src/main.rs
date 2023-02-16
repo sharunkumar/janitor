@@ -3,6 +3,7 @@ use ini::ini;
 use notify_rust::Notification;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 use std::thread;
 use std::time::Duration;
 
@@ -61,6 +62,8 @@ fn run_once(config: Configuration) {
 
     let destination_path = Path::new(&config.destination);
 
+    let mut any_moved = false;
+
     fs::create_dir_all(destination_path).unwrap();
 
     for file in config.sources {
@@ -77,6 +80,7 @@ fn run_once(config: Configuration) {
                         "Moved",
                         format!("Moved {} to {}", &file_str, &config.destination).as_str(),
                     );
+                    any_moved = true;
                 }
                 Err(_) => {
                     app_message(
@@ -87,5 +91,13 @@ fn run_once(config: Configuration) {
                 }
             }
         }
+    }
+
+    if any_moved {
+        // todo: make this configurable
+        Command::new("explorer")
+            .arg(destination_path.to_str().unwrap())
+            .spawn()
+            .expect("Failed to open explorer");
     }
 }
