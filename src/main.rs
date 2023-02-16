@@ -1,5 +1,6 @@
 use directories::UserDirs;
 use ini::ini;
+use notify_rust::Notification;
 use std::fs;
 use std::path::Path;
 use std::thread;
@@ -29,12 +30,15 @@ fn main() {
                 ) {
                     Ok(_) => {
                         fs::remove_file(downloads_path.join(&file_str)).unwrap();
-                        println!("Moved {} to {}", &file_str, &desination);
+                        notify(
+                            "Moved",
+                            format!("Moved {} to {}", &file_str, &desination).as_str(),
+                        );
                     }
                     Err(_) => {
-                        println!(
-                            "Failed to copy {} to {}. Waiting for 10 seconds...",
-                            &file_str, &desination
+                        notify(
+                            "Failed",
+                            format!("Failed to move {} to {}", &file_str, &desination).as_str(),
                         );
                         thread::sleep(Duration::from_secs(10));
                     }
@@ -45,4 +49,14 @@ fn main() {
         // Sleep for 1 second before checking again
         thread::sleep(Duration::from_secs(1));
     }
+}
+
+fn notify(summary: &str, message: &str) {
+    println!("{}", message);
+    Notification::new()
+        .appname("Janitor")
+        .summary(summary)
+        .body(message)
+        .show()
+        .unwrap();
 }
