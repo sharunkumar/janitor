@@ -6,6 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-directories = "*"
-ini = "*"
-notify-rust = "*"
+directories = "5.0.1"
+glob = "0.3.1"
+notify-rust = "4.8.0"
+serde = { version = "1.0.162", features = ["derive"] }
+toml = "0.7.3"

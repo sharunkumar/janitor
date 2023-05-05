@@ -1,0 +1,2 @@
+example = [["file*.pdf", 'C:\Path\To\Folder\']]
+patterns = []
