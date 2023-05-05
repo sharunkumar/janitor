@@ -1,29 +1,12 @@
+mod config;
+use config::Config;
 use directories::UserDirs;
 use glob::{glob_with, MatchOptions};
 use notify_rust::Notification;
-use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::Duration;
-
-#[derive(Serialize, Deserialize, Debug)]
-struct Config {
-    example: Vec<(String, String)>,
-    patterns: Vec<(String, String)>,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            example: vec![(
-                "file*.pdf".to_string(),
-                "C:\\Path\\To\\Folder\\".to_string(),
-            )],
-            patterns: Default::default(),
-        }
-    }
-}
 
 fn main() {
     loop {
