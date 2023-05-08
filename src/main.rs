@@ -2,16 +2,20 @@ mod config;
 use config::{Config, ExampleConfig};
 use directories::UserDirs;
 use glob::{glob_with, MatchOptions};
+use lazy_static::lazy_static;
 use notify_rust::Notification;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::Duration;
 
+lazy_static! {
+    static ref GLOBAL_CONFIG: Config = read_config();
+}
+
 fn main() {
     loop {
-        let configuration = read_config();
-        app_logic(configuration);
+        app_logic();
         thread::sleep(Duration::from_secs(1));
     }
 }
@@ -54,8 +58,8 @@ fn get_config_path() -> PathBuf {
     get_downloads_path().join("janitor.toml")
 }
 
-fn app_logic(configuration: Config) {
-    for (pattern, destination) in configuration.patterns {
+fn app_logic() {
+    for (pattern, destination) in GLOBAL_CONFIG.patterns.clone() {
         let destination_path = Path::new(&destination);
         fs::create_dir_all(destination_path).unwrap();
         // get files from downloads directory that match pattern
