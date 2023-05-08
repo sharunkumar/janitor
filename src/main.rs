@@ -1,5 +1,5 @@
 mod config;
-use config::Config;
+use config::{Config, ExampleConfig};
 use directories::UserDirs;
 use glob::{glob_with, MatchOptions};
 use notify_rust::Notification;
@@ -38,7 +38,11 @@ fn read_config() -> Config {
 }
 
 fn write_default_config(config_path: &PathBuf) {
-    fs::write(&config_path, toml::to_string(&Config::default()).unwrap()).unwrap();
+    fs::write(
+        &config_path,
+        toml::to_string(&ExampleConfig::default()).unwrap(),
+    )
+    .unwrap();
     app_message("Config file created", &config_path.to_str().unwrap());
 }
 
