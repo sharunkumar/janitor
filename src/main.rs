@@ -3,21 +3,51 @@ use config::{Config, ExampleConfig};
 use directories::UserDirs;
 use glob::{glob_with, MatchOptions};
 use lazy_static::lazy_static;
+use notify_debouncer_mini::new_debouncer_opt;
 use notify_rust::Notification;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 use std::thread;
 use std::time::Duration;
 
 lazy_static! {
-    static ref GLOBAL_CONFIG: Config = read_config();
+    static ref CONFIG: Mutex<Config> = Mutex::new(read_config());
 }
 
-fn main() {
-    loop {
+fn main() -> notify::Result<()> {
+    std::thread::spawn(|| loop {
         app_logic();
         thread::sleep(Duration::from_secs(1));
+    });
+
+    let (tx, rx) = std::sync::mpsc::channel();
+    let mut debouncer = new_debouncer_opt::<_, notify::RecommendedWatcher>(
+        Duration::from_millis(500),
+        None,
+        tx,
+        notify::Config::default(),
+    )
+    .unwrap();
+
+    debouncer
+        .watcher()
+        .watch(
+            get_config_path().as_path(),
+            notify::RecursiveMode::NonRecursive,
+        )
+        .unwrap();
+
+    for events in rx {
+        events.into_iter().for_each(|_| {
+            let new_config = read_config();
+            let mut config = CONFIG.lock().unwrap();
+            config.patterns = new_config.patterns;
+            // *GLOBAL_CONFIG = new_config;
+        });
     }
+
+    Ok(())
 }
 
 fn read_config() -> Config {
@@ -59,7 +89,8 @@ fn get_config_path() -> PathBuf {
 }
 
 fn app_logic() {
-    for (pattern, destination) in GLOBAL_CONFIG.patterns.to_owned() {
+    let config = CONFIG.lock().unwrap();
+    for (pattern, destination) in config.patterns.to_owned() {
         let destination_path = Path::new(&destination);
         fs::create_dir_all(destination_path).unwrap();
         // get files from downloads directory that match pattern
