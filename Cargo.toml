@@ -8,6 +8,9 @@ edition = "2021"
 [dependencies]
 directories = "5.0.1"
 glob = "0.3.1"
+lazy_static = "1.4.0"
+notify = "5.1.0"
+notify-debouncer-mini = "0.2.1"
 notify-rust = "4.8.0"
 serde = { version = "1.0.162", features = ["derive"] }
 toml = "0.7.3"
