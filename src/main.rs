@@ -43,7 +43,6 @@ fn main() -> notify::Result<()> {
             let new_config = read_config();
             let mut config = CONFIG.lock().unwrap();
             config.patterns = new_config.patterns;
-            // *GLOBAL_CONFIG = new_config;
         });
     }
 
@@ -93,16 +92,20 @@ fn app_logic() {
     for (pattern, destination) in config.patterns.to_owned() {
         let destination_path = Path::new(&destination);
         fs::create_dir_all(destination_path).unwrap();
-        // get files from downloads directory that match pattern
-        let options = MatchOptions {
-            case_sensitive: false,
-            require_literal_separator: false,
-            require_literal_leading_dot: false,
-        };
 
+        // get files from downloads directory that match pattern
         let path_and_pattern = get_config_path().parent().unwrap().join(&pattern);
 
-        for entry in glob_with(path_and_pattern.to_str().unwrap(), options).unwrap() {
+        for entry in glob_with(
+            path_and_pattern.to_str().unwrap(),
+            MatchOptions {
+                case_sensitive: false,
+                require_literal_separator: false,
+                require_literal_leading_dot: false,
+            },
+        )
+        .unwrap()
+        {
             if let Ok(path) = entry {
                 app_message(
                     "Moving",
@@ -113,7 +116,6 @@ fn app_logic() {
                     &path,
                     destination_path.join(&path.file_name().unwrap().to_str().unwrap()),
                 ) {
-                    Ok(_) => (),
                     Err(_) => {
                         // try copy and delete if that does not work
                         match fs::copy(
@@ -133,6 +135,7 @@ fn app_logic() {
                             }
                         }
                     }
+                    Ok(_) => (),
                 }
             }
         }
