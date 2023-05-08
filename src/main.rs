@@ -65,21 +65,34 @@ fn app_logic(configuration: Config) {
 
         for entry in glob_with(path_and_pattern.to_str().unwrap(), options).unwrap() {
             if let Ok(path) = entry {
-                app_message("Moving", path.to_str().unwrap());
-                match fs::copy(
+                app_message(
+                    "Moving",
+                    format!("{} to {}", &path.display(), &destination_path.display()).as_str(),
+                );
+                // try with rename first
+                match fs::rename(
                     &path,
                     destination_path.join(&path.file_name().unwrap().to_str().unwrap()),
                 ) {
-                    Ok(_) => fs::remove_file(path).unwrap(),
+                    Ok(_) => (),
                     Err(_) => {
-                        app_message(
-                            "Move Failed",
-                            format!(
-                                "Could not move file: {}\nWill try again in next cycle",
-                                path.to_str().unwrap()
-                            )
-                            .as_str(),
-                        );
+                        // try copy and delete if that does not work
+                        match fs::copy(
+                            &path,
+                            destination_path.join(&path.file_name().unwrap().to_str().unwrap()),
+                        ) {
+                            Ok(_) => fs::remove_file(path).unwrap(),
+                            Err(_) => {
+                                app_message(
+                                    "Move Failed",
+                                    format!(
+                                        "Could not move file: {}\nWill try again in next cycle",
+                                        path.to_str().unwrap()
+                                    )
+                                    .as_str(),
+                                );
+                            }
+                        }
                     }
                 }
             }
