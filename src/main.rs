@@ -59,7 +59,7 @@ fn get_config_path() -> PathBuf {
 }
 
 fn app_logic() {
-    for (pattern, destination) in GLOBAL_CONFIG.patterns.clone() {
+    for (pattern, destination) in GLOBAL_CONFIG.patterns.to_owned() {
         let destination_path = Path::new(&destination);
         fs::create_dir_all(destination_path).unwrap();
         // get files from downloads directory that match pattern
