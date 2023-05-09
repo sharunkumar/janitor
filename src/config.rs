@@ -1,7 +1,6 @@
-use std::path::PathBuf;
-
 use directories::UserDirs;
-use serde::{Deserialize, Serialize};
+use serde::*;
+use std::path::PathBuf;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {

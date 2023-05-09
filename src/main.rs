@@ -1,17 +1,17 @@
 #![windows_subsystem = "windows"]
 
 mod config;
-use config::{get_config_path, Config, ExampleConfig};
-use glob::{glob_with, MatchOptions};
+use config::*;
+use glob::*;
 use lazy_static::lazy_static;
-use notify_debouncer_mini::new_debouncer_opt;
+use notify_debouncer_mini::*;
 use notify_rust::Notification;
 use std::fs;
-use std::path::{Path, PathBuf};
-use std::sync::{mpsc, Arc, Mutex};
+use std::path::*;
+use std::sync::*;
 use std::thread;
 use std::time::Duration;
-use tray_item::{IconSource, TrayItem};
+use tray_item::*;
 
 lazy_static! {
     static ref CONFIG: Mutex<Config> = Mutex::new(read_config());
