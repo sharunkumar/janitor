@@ -1,3 +1,6 @@
+use std::path::PathBuf;
+
+use directories::UserDirs;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -21,4 +24,12 @@ impl Default for ExampleConfig {
             patterns: Default::default(),
         }
     }
+}
+
+pub fn get_downloads_path() -> PathBuf {
+    UserDirs::new().unwrap().download_dir().unwrap().to_owned()
+}
+
+pub fn get_config_path() -> PathBuf {
+    get_downloads_path().join("janitor.toml")
 }

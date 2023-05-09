@@ -1,8 +1,7 @@
 #![windows_subsystem = "windows"]
 
 mod config;
-use config::{Config, ExampleConfig};
-use directories::UserDirs;
+use config::{get_config_path, Config, ExampleConfig};
 use glob::{glob_with, MatchOptions};
 use lazy_static::lazy_static;
 use notify_debouncer_mini::new_debouncer_opt;
@@ -181,14 +180,6 @@ fn write_default_config(config_path: &PathBuf) {
     )
     .unwrap();
     app_message("Config file created", &config_path.to_str().unwrap());
-}
-
-fn get_downloads_path() -> PathBuf {
-    UserDirs::new().unwrap().download_dir().unwrap().to_owned()
-}
-
-fn get_config_path() -> PathBuf {
-    get_downloads_path().join("janitor.toml")
 }
 
 fn app_message(summary: &str, message: &str) {
