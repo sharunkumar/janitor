@@ -133,8 +133,7 @@ fn app_logic() {
 }
 
 fn setup_tray() -> (std::sync::mpsc::Receiver<TrayMessage>, TrayItem) {
-    let mut tray =
-        TrayItem::new("Janitor", IconSource::Resource("name-of-icon-in-rc-file")).unwrap();
+    let mut tray = TrayItem::new("Janitor", IconSource::Resource("aa-exe-icon")).unwrap();
 
     tray.add_label("Janitor is running...").unwrap();
 
