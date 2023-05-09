@@ -70,67 +70,53 @@ fn main() {
 
 fn app_logic() {
     let config = CONFIG.lock().unwrap();
-    for (pattern, destination) in config.patterns.to_owned() {
-        let destination_path = Path::new(&destination);
-        fs::create_dir_all(destination_path).unwrap();
 
-        // get files from downloads directory that match pattern
-        let path_and_pattern = get_config_path().parent().unwrap().join(&pattern);
+    let options = MatchOptions {
+        case_sensitive: false,
+        require_literal_separator: false,
+        require_literal_leading_dot: false,
+    };
 
-        let glob = glob_with(
-            path_and_pattern.to_str().unwrap(),
-            MatchOptions {
-                case_sensitive: false,
-                require_literal_separator: false,
-                require_literal_leading_dot: false,
-            },
-        )
-        .unwrap();
-
-        let mut count = 0;
-
-        for entry in glob {
-            if let Ok(path) = entry {
-                // try with rename first
-                match fs::rename(
-                    &path,
-                    destination_path.join(&path.file_name().unwrap().to_str().unwrap()),
-                ) {
-                    Err(_) => {
+    let result: usize = config
+        .patterns
+        .to_owned()
+        .into_iter()
+        .map(|(pattern, destination)| (pattern, Path::new(&destination).to_owned()))
+        .map(|(pattern, destination_path)| {
+            fs::create_dir_all(&destination_path).unwrap();
+            // get files from downloads directory that match pattern
+            let path_and_pattern = get_config_path().parent().unwrap().join(&pattern);
+            let paths = glob_with(path_and_pattern.to_str().unwrap(), options).unwrap();
+            (paths, destination_path)
+        })
+        .map(|(paths, destination_path)| {
+            paths
+                .filter_map(|f| f.ok())
+                .map(|path| {
+                    (
+                        path.to_owned(),
+                        destination_path.join(&path.file_name().unwrap()),
+                    )
+                })
+                .map(|(from, to)| {
+                    fs::rename(&from, &to).or_else(|_| {
                         // try copy and delete if that does not work
-                        match fs::copy(
-                            &path,
-                            destination_path.join(&path.file_name().unwrap().to_str().unwrap()),
-                        ) {
-                            Ok(_) => {
-                                fs::remove_file(path).unwrap();
-                                count += 1;
-                            }
-                            Err(_) => {
-                                app_message(
-                                    "Move Failed",
-                                    format!(
-                                        "Could not move file: {}\nWill try again in next cycle",
-                                        path.to_str().unwrap()
-                                    )
-                                    .as_str(),
-                                );
-                            }
-                        }
-                    }
-                    Ok(_) => {
-                        count += 1;
-                    }
-                }
-            }
-        }
+                        fs::copy(&from, &to).and_then(|_| {
+                            fs::remove_file(&from).unwrap();
+                            Ok(())
+                        })
+                    })
+                })
+                .filter_map(|f| f.ok())
+                .count()
+        })
+        .sum();
 
-        if count > 0 {
-            app_message(
-                "Moved",
-                format!("{} {}", count, if count > 1 { "files" } else { "file" }).as_str(),
-            );
-        }
+    if result > 0 {
+        app_message(
+            "Moved",
+            format!("{} {}", result, if result > 1 { "files" } else { "file" }).as_str(),
+        );
     }
 }
 
