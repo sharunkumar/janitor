@@ -4,8 +4,8 @@ just an app that watches the downloads folder for specific files and moves them 
 
 ## Usage
 
-1. copy `janitor.ini` to your downloads folder
-2. edit the ini file to include the files that you want to watch/move
-3. run the janitor binary
+1. run the janitor binary
+2. a `janitor.toml` file would be created in your downloads directory
+3. update the toml file with patterns and destinations - examples entry can be used as reference - patterns are comma separated tuples
 
 fun fact: this is my first ever rust app
