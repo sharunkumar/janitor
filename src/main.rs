@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 mod config;
 use config::{Config, ExampleConfig};
 use directories::UserDirs;
@@ -7,18 +9,40 @@ use notify_debouncer_mini::new_debouncer_opt;
 use notify_rust::Notification;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
+use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
 use std::time::Duration;
+use tray_item::{IconSource, TrayItem};
 
 lazy_static! {
     static ref CONFIG: Mutex<Config> = Mutex::new(read_config());
 }
 
-fn main() -> notify::Result<()> {
+fn main() {
+    // check if its a single instance
+    let instance = single_instance::SingleInstance::new("janitor").unwrap();
+
+    if !instance.is_single() {
+        println!("Another instance of janitor is already running");
+        std::process::exit(1);
+    }
+
     std::thread::spawn(|| loop {
         app_logic();
         thread::sleep(Duration::from_secs(1));
+    });
+
+    std::thread::spawn(|| {
+        let (rx_tray, mut _tray) = setup_tray();
+        loop {
+            match rx_tray.recv() {
+                Ok(TrayMessage::Quit) => {
+                    println!("Quit");
+                    std::process::exit(0);
+                }
+                _ => {}
+            }
+        }
     });
 
     let (tx, rx) = std::sync::mpsc::channel();
@@ -32,21 +56,98 @@ fn main() -> notify::Result<()> {
 
     debouncer
         .watcher()
-        .watch(
-            get_config_path().as_path(),
-            notify::RecursiveMode::NonRecursive,
-        )
+        .watch(&get_config_path(), notify::RecursiveMode::NonRecursive)
         .unwrap();
 
     for events in rx {
-        events.into_iter().for_each(|_| {
+        events.into_iter().for_each(|e| {
+            println!("{:?}", e);
             let new_config = read_config();
             let mut config = CONFIG.lock().unwrap();
             config.patterns = new_config.patterns;
         });
     }
+}
 
-    Ok(())
+fn app_logic() {
+    let config = CONFIG.lock().unwrap();
+    for (pattern, destination) in config.patterns.to_owned() {
+        let destination_path = Path::new(&destination);
+        fs::create_dir_all(destination_path).unwrap();
+
+        // get files from downloads directory that match pattern
+        let path_and_pattern = get_config_path().parent().unwrap().join(&pattern);
+
+        let glob = glob_with(
+            path_and_pattern.to_str().unwrap(),
+            MatchOptions {
+                case_sensitive: false,
+                require_literal_separator: false,
+                require_literal_leading_dot: false,
+            },
+        )
+        .unwrap();
+
+        let mut count = 0;
+
+        for entry in glob {
+            if let Ok(path) = entry {
+                // try with rename first
+                match fs::rename(
+                    &path,
+                    destination_path.join(&path.file_name().unwrap().to_str().unwrap()),
+                ) {
+                    Err(_) => {
+                        // try copy and delete if that does not work
+                        match fs::copy(
+                            &path,
+                            destination_path.join(&path.file_name().unwrap().to_str().unwrap()),
+                        ) {
+                            Ok(_) => {
+                                fs::remove_file(path).unwrap();
+                                count += 1;
+                            }
+                            Err(_) => {
+                                app_message(
+                                    "Move Failed",
+                                    format!(
+                                        "Could not move file: {}\nWill try again in next cycle",
+                                        path.to_str().unwrap()
+                                    )
+                                    .as_str(),
+                                );
+                            }
+                        }
+                    }
+                    Ok(_) => {
+                        count += 1;
+                    }
+                }
+            }
+        }
+
+        if count > 0 {
+            app_message("Moved", format!("{} file(s)", count).as_str());
+        }
+    }
+}
+
+fn setup_tray() -> (std::sync::mpsc::Receiver<TrayMessage>, TrayItem) {
+    let mut tray = TrayItem::new("Janitor", IconSource::Resource("aa-exe-icon")).unwrap();
+
+    tray.add_label("Janitor is running...").unwrap();
+
+    let (tx, rx) = mpsc::channel();
+
+    tray.inner_mut().add_separator().unwrap();
+
+    let quit_tx = get_thread_sender(&tx);
+    tray.add_menu_item("Quit", move || {
+        quit_tx.lock().unwrap().send(TrayMessage::Quit).unwrap();
+    })
+    .unwrap();
+
+    return (rx, tray);
 }
 
 fn read_config() -> Config {
@@ -87,61 +188,6 @@ fn get_config_path() -> PathBuf {
     get_downloads_path().join("janitor.toml")
 }
 
-fn app_logic() {
-    let config = CONFIG.lock().unwrap();
-    for (pattern, destination) in config.patterns.to_owned() {
-        let destination_path = Path::new(&destination);
-        fs::create_dir_all(destination_path).unwrap();
-
-        // get files from downloads directory that match pattern
-        let path_and_pattern = get_config_path().parent().unwrap().join(&pattern);
-
-        for entry in glob_with(
-            path_and_pattern.to_str().unwrap(),
-            MatchOptions {
-                case_sensitive: false,
-                require_literal_separator: false,
-                require_literal_leading_dot: false,
-            },
-        )
-        .unwrap()
-        {
-            if let Ok(path) = entry {
-                app_message(
-                    "Moving",
-                    format!("{} to {}", &path.display(), &destination_path.display()).as_str(),
-                );
-                // try with rename first
-                match fs::rename(
-                    &path,
-                    destination_path.join(&path.file_name().unwrap().to_str().unwrap()),
-                ) {
-                    Err(_) => {
-                        // try copy and delete if that does not work
-                        match fs::copy(
-                            &path,
-                            destination_path.join(&path.file_name().unwrap().to_str().unwrap()),
-                        ) {
-                            Ok(_) => fs::remove_file(path).unwrap(),
-                            Err(_) => {
-                                app_message(
-                                    "Move Failed",
-                                    format!(
-                                        "Could not move file: {}\nWill try again in next cycle",
-                                        path.to_str().unwrap()
-                                    )
-                                    .as_str(),
-                                );
-                            }
-                        }
-                    }
-                    Ok(_) => (),
-                }
-            }
-        }
-    }
-}
-
 fn app_message(summary: &str, message: &str) {
     println!("{} {}", summary, message);
     Notification::new()
@@ -150,4 +196,15 @@ fn app_message(summary: &str, message: &str) {
         .body(message)
         .show()
         .unwrap();
+}
+
+enum TrayMessage {
+    Quit,
+}
+
+fn get_thread_sender(sender: &mpsc::Sender<TrayMessage>) -> Arc<Mutex<mpsc::Sender<TrayMessage>>> {
+    let tx = sender.clone();
+    let sender = Arc::new(Mutex::new(tx));
+    let thread_sender = sender.clone();
+    thread_sender
 }
