@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 mod config;
 use config::{Config, ExampleConfig};
 use directories::UserDirs;
@@ -7,21 +9,63 @@ use notify_debouncer_mini::new_debouncer_opt;
 use notify_rust::Notification;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
+use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
 use std::time::Duration;
+use tray_item::{IconSource, TrayItem};
 
 lazy_static! {
     static ref CONFIG: Mutex<Config> = Mutex::new(read_config());
 }
 
-fn main() -> notify::Result<()> {
+fn main() {
     std::thread::spawn(|| loop {
         app_logic();
         thread::sleep(Duration::from_secs(1));
     });
 
-    let (tx, rx) = std::sync::mpsc::channel();
+    std::thread::spawn(|| {
+        let (rx_tray, mut tray) = setup_tray();
+        loop {
+            match rx_tray.recv() {
+                Ok(Message::Quit) => {
+                    println!("Quit");
+                    std::process::exit(0);
+                }
+                Ok(Message::Red) => {
+                    println!("Red");
+                    tray.set_icon(IconSource::Resource("another-name-from-rc-file"))
+                        .unwrap();
+                }
+                Ok(Message::Green) => {
+                    println!("Green");
+                    tray.set_icon(IconSource::Resource("name-of-icon-in-rc-file"))
+                        .unwrap()
+                }
+                _ => {}
+            }
+        }
+    });
+
+    let rx_config = setup_config_watcher();
+
+    loop {
+        match rx_config.recv() {
+            Ok(_event) => {
+                println!("Config changed");
+                let new_config = read_config();
+                let mut config = CONFIG.lock().unwrap();
+                config.patterns = new_config.patterns;
+            }
+            _ => {}
+        }
+    }
+}
+
+fn setup_config_watcher(
+) -> mpsc::Receiver<Result<Vec<notify_debouncer_mini::DebouncedEvent>, Vec<notify::Error>>> {
+    let (tx, rx) = mpsc::channel();
+    // setup_tray(tx);
     let mut debouncer = new_debouncer_opt::<_, notify::RecommendedWatcher>(
         Duration::from_millis(500),
         None,
@@ -37,16 +81,48 @@ fn main() -> notify::Result<()> {
             notify::RecursiveMode::NonRecursive,
         )
         .unwrap();
+    rx
+}
 
-    for events in rx {
-        events.into_iter().for_each(|_| {
-            let new_config = read_config();
-            let mut config = CONFIG.lock().unwrap();
-            config.patterns = new_config.patterns;
-        });
-    }
+fn setup_tray() -> (std::sync::mpsc::Receiver<Message>, TrayItem) {
+    let mut tray = TrayItem::new(
+        "Tray Example",
+        IconSource::Resource("name-of-icon-in-rc-file"),
+    )
+    .unwrap();
 
-    Ok(())
+    tray.add_label("Tray Label").unwrap();
+
+    tray.add_menu_item("Hello", || {
+        println!("Hello!");
+    })
+    .unwrap();
+
+    tray.inner_mut().add_separator().unwrap();
+
+    let (tx, rx) = mpsc::channel();
+
+    let red_tx = get_thread_sender(&tx);
+    tray.add_menu_item("Red", move || {
+        red_tx.lock().unwrap().send(Message::Red).unwrap();
+    })
+    .unwrap();
+
+    let green_tx = get_thread_sender(&tx);
+    tray.add_menu_item("Green", move || {
+        green_tx.lock().unwrap().send(Message::Green).unwrap();
+    })
+    .unwrap();
+
+    tray.inner_mut().add_separator().unwrap();
+
+    let quit_tx = get_thread_sender(&tx);
+    tray.add_menu_item("Quit", move || {
+        quit_tx.lock().unwrap().send(Message::Quit).unwrap();
+    })
+    .unwrap();
+
+    return (rx, tray);
 }
 
 fn read_config() -> Config {
@@ -150,4 +226,17 @@ fn app_message(summary: &str, message: &str) {
         .body(message)
         .show()
         .unwrap();
+}
+
+enum Message {
+    Quit,
+    Green,
+    Red,
+}
+
+fn get_thread_sender(sender: &mpsc::Sender<Message>) -> Arc<Mutex<mpsc::Sender<Message>>> {
+    let tx = sender.clone();
+    let sender = Arc::new(Mutex::new(tx));
+    let thread_sender = sender.clone();
+    thread_sender
 }

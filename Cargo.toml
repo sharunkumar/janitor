@@ -14,3 +14,7 @@ notify-debouncer-mini = "0.2.1"
 notify-rust = "4.8.0"
 serde = { version = "1.0.162", features = ["derive"] }
 toml = "0.7.3"
+tray-item = "0.8.0"
+
+[build-dependencies]
+windres = "0.2.2"
