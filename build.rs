@@ -1,5 +1,5 @@
 use windres::Build;
 
 fn main() {
-    Build::new().compile("tray-example.rc").unwrap();
+    Build::new().compile("icons/app-resources.rc").unwrap();
 }
