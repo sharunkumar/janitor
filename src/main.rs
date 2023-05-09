@@ -37,18 +37,27 @@ fn main() {
         }
     });
 
-    let rx_config = setup_config_watcher();
+    let (tx, rx) = std::sync::mpsc::channel();
+    let mut debouncer = new_debouncer_opt::<_, notify::RecommendedWatcher>(
+        Duration::from_millis(500),
+        None,
+        tx,
+        notify::Config::default(),
+    )
+    .unwrap();
 
-    loop {
-        match rx_config.recv() {
-            Ok(_event) => {
-                println!("Config changed");
-                let new_config = read_config();
-                let mut config = CONFIG.lock().unwrap();
-                config.patterns = new_config.patterns;
-            }
-            _ => {}
-        }
+    debouncer
+        .watcher()
+        .watch(&get_config_path(), notify::RecursiveMode::NonRecursive)
+        .unwrap();
+
+    for events in rx {
+        events.into_iter().for_each(|e| {
+            println!("{:?}", e);
+            let new_config = read_config();
+            let mut config = CONFIG.lock().unwrap();
+            config.patterns = new_config.patterns;
+        });
     }
 }
 
@@ -105,28 +114,6 @@ fn app_logic() {
             }
         }
     }
-}
-
-fn setup_config_watcher(
-) -> mpsc::Receiver<Result<Vec<notify_debouncer_mini::DebouncedEvent>, Vec<notify::Error>>> {
-    let (tx, rx) = mpsc::channel();
-    // setup_tray(tx);
-    let mut debouncer = new_debouncer_opt::<_, notify::RecommendedWatcher>(
-        Duration::from_millis(500),
-        None,
-        tx,
-        notify::Config::default(),
-    )
-    .unwrap();
-
-    debouncer
-        .watcher()
-        .watch(
-            get_config_path().as_path(),
-            notify::RecursiveMode::NonRecursive,
-        )
-        .unwrap();
-    rx
 }
 
 fn setup_tray() -> (std::sync::mpsc::Receiver<TrayMessage>, TrayItem) {
