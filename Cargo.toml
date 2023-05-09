@@ -13,6 +13,7 @@ notify = "5.1.0"
 notify-debouncer-mini = "0.2.1"
 notify-rust = "4.8.0"
 serde = { version = "1.0.162", features = ["derive"] }
+single-instance = "0.3.3"
 toml = "0.7.3"
 tray-item = "0.8.0"
 

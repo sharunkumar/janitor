@@ -19,6 +19,14 @@ lazy_static! {
 }
 
 fn main() {
+    // check if its a single instance
+    let instance = single_instance::SingleInstance::new("janitor").unwrap();
+
+    if !instance.is_single() {
+        println!("Another instance of janitor is already running");
+        std::process::exit(1);
+    }
+
     std::thread::spawn(|| loop {
         app_logic();
         thread::sleep(Duration::from_secs(1));
