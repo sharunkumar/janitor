@@ -52,6 +52,61 @@ fn main() {
     }
 }
 
+fn app_logic() {
+    let config = CONFIG.lock().unwrap();
+    for (pattern, destination) in config.patterns.to_owned() {
+        let destination_path = Path::new(&destination);
+        fs::create_dir_all(destination_path).unwrap();
+
+        // get files from downloads directory that match pattern
+        let path_and_pattern = get_config_path().parent().unwrap().join(&pattern);
+
+        for entry in glob_with(
+            path_and_pattern.to_str().unwrap(),
+            MatchOptions {
+                case_sensitive: false,
+                require_literal_separator: false,
+                require_literal_leading_dot: false,
+            },
+        )
+        .unwrap()
+        {
+            if let Ok(path) = entry {
+                app_message(
+                    "Moving",
+                    format!("{} to {}", &path.display(), &destination_path.display()).as_str(),
+                );
+                // try with rename first
+                match fs::rename(
+                    &path,
+                    destination_path.join(&path.file_name().unwrap().to_str().unwrap()),
+                ) {
+                    Err(_) => {
+                        // try copy and delete if that does not work
+                        match fs::copy(
+                            &path,
+                            destination_path.join(&path.file_name().unwrap().to_str().unwrap()),
+                        ) {
+                            Ok(_) => fs::remove_file(path).unwrap(),
+                            Err(_) => {
+                                app_message(
+                                    "Move Failed",
+                                    format!(
+                                        "Could not move file: {}\nWill try again in next cycle",
+                                        path.to_str().unwrap()
+                                    )
+                                    .as_str(),
+                                );
+                            }
+                        }
+                    }
+                    Ok(_) => (),
+                }
+            }
+        }
+    }
+}
+
 fn setup_config_watcher(
 ) -> mpsc::Receiver<Result<Vec<notify_debouncer_mini::DebouncedEvent>, Vec<notify::Error>>> {
     let (tx, rx) = mpsc::channel();
@@ -129,61 +184,6 @@ fn get_downloads_path() -> PathBuf {
 
 fn get_config_path() -> PathBuf {
     get_downloads_path().join("janitor.toml")
-}
-
-fn app_logic() {
-    let config = CONFIG.lock().unwrap();
-    for (pattern, destination) in config.patterns.to_owned() {
-        let destination_path = Path::new(&destination);
-        fs::create_dir_all(destination_path).unwrap();
-
-        // get files from downloads directory that match pattern
-        let path_and_pattern = get_config_path().parent().unwrap().join(&pattern);
-
-        for entry in glob_with(
-            path_and_pattern.to_str().unwrap(),
-            MatchOptions {
-                case_sensitive: false,
-                require_literal_separator: false,
-                require_literal_leading_dot: false,
-            },
-        )
-        .unwrap()
-        {
-            if let Ok(path) = entry {
-                app_message(
-                    "Moving",
-                    format!("{} to {}", &path.display(), &destination_path.display()).as_str(),
-                );
-                // try with rename first
-                match fs::rename(
-                    &path,
-                    destination_path.join(&path.file_name().unwrap().to_str().unwrap()),
-                ) {
-                    Err(_) => {
-                        // try copy and delete if that does not work
-                        match fs::copy(
-                            &path,
-                            destination_path.join(&path.file_name().unwrap().to_str().unwrap()),
-                        ) {
-                            Ok(_) => fs::remove_file(path).unwrap(),
-                            Err(_) => {
-                                app_message(
-                                    "Move Failed",
-                                    format!(
-                                        "Could not move file: {}\nWill try again in next cycle",
-                                        path.to_str().unwrap()
-                                    )
-                                    .as_str(),
-                                );
-                            }
-                        }
-                    }
-                    Ok(_) => (),
-                }
-            }
-        }
-    }
 }
 
 fn app_message(summary: &str, message: &str) {
