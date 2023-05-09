@@ -127,7 +127,10 @@ fn app_logic() {
         }
 
         if count > 0 {
-            app_message("Moved", format!("{} file(s)", count).as_str());
+            app_message(
+                "Moved",
+                format!("{} {}", count, if count > 1 { "files" } else { "file" }).as_str(),
+            );
         }
     }
 }
