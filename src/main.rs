@@ -25,22 +25,12 @@ fn main() {
     });
 
     std::thread::spawn(|| {
-        let (rx_tray, mut tray) = setup_tray();
+        let (rx_tray, mut _tray) = setup_tray();
         loop {
             match rx_tray.recv() {
-                Ok(Message::Quit) => {
+                Ok(TrayMessage::Quit) => {
                     println!("Quit");
                     std::process::exit(0);
-                }
-                Ok(Message::Red) => {
-                    println!("Red");
-                    tray.set_icon(IconSource::Resource("another-name-from-rc-file"))
-                        .unwrap();
-                }
-                Ok(Message::Green) => {
-                    println!("Green");
-                    tray.set_icon(IconSource::Resource("name-of-icon-in-rc-file"))
-                        .unwrap()
                 }
                 _ => {}
             }
@@ -84,41 +74,19 @@ fn setup_config_watcher(
     rx
 }
 
-fn setup_tray() -> (std::sync::mpsc::Receiver<Message>, TrayItem) {
-    let mut tray = TrayItem::new(
-        "Tray Example",
-        IconSource::Resource("name-of-icon-in-rc-file"),
-    )
-    .unwrap();
+fn setup_tray() -> (std::sync::mpsc::Receiver<TrayMessage>, TrayItem) {
+    let mut tray =
+        TrayItem::new("Janitor", IconSource::Resource("name-of-icon-in-rc-file")).unwrap();
 
-    tray.add_label("Tray Label").unwrap();
-
-    tray.add_menu_item("Hello", || {
-        println!("Hello!");
-    })
-    .unwrap();
-
-    tray.inner_mut().add_separator().unwrap();
+    tray.add_label("Janitor is running...").unwrap();
 
     let (tx, rx) = mpsc::channel();
-
-    let red_tx = get_thread_sender(&tx);
-    tray.add_menu_item("Red", move || {
-        red_tx.lock().unwrap().send(Message::Red).unwrap();
-    })
-    .unwrap();
-
-    let green_tx = get_thread_sender(&tx);
-    tray.add_menu_item("Green", move || {
-        green_tx.lock().unwrap().send(Message::Green).unwrap();
-    })
-    .unwrap();
 
     tray.inner_mut().add_separator().unwrap();
 
     let quit_tx = get_thread_sender(&tx);
     tray.add_menu_item("Quit", move || {
-        quit_tx.lock().unwrap().send(Message::Quit).unwrap();
+        quit_tx.lock().unwrap().send(TrayMessage::Quit).unwrap();
     })
     .unwrap();
 
@@ -228,13 +196,11 @@ fn app_message(summary: &str, message: &str) {
         .unwrap();
 }
 
-enum Message {
+enum TrayMessage {
     Quit,
-    Green,
-    Red,
 }
 
-fn get_thread_sender(sender: &mpsc::Sender<Message>) -> Arc<Mutex<mpsc::Sender<Message>>> {
+fn get_thread_sender(sender: &mpsc::Sender<TrayMessage>) -> Arc<Mutex<mpsc::Sender<TrayMessage>>> {
     let tx = sender.clone();
     let sender = Arc::new(Mutex::new(tx));
     let thread_sender = sender.clone();
