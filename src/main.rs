@@ -78,7 +78,7 @@ fn app_logic() {
         // get files from downloads directory that match pattern
         let path_and_pattern = get_config_path().parent().unwrap().join(&pattern);
 
-        for entry in glob_with(
+        let glob = glob_with(
             path_and_pattern.to_str().unwrap(),
             MatchOptions {
                 case_sensitive: false,
@@ -86,13 +86,12 @@ fn app_logic() {
                 require_literal_leading_dot: false,
             },
         )
-        .unwrap()
-        {
+        .unwrap();
+
+        let mut count = 0;
+
+        for entry in glob {
             if let Ok(path) = entry {
-                app_message(
-                    "Moving",
-                    format!("{} to {}", &path.display(), &destination_path.display()).as_str(),
-                );
                 // try with rename first
                 match fs::rename(
                     &path,
@@ -104,7 +103,10 @@ fn app_logic() {
                             &path,
                             destination_path.join(&path.file_name().unwrap().to_str().unwrap()),
                         ) {
-                            Ok(_) => fs::remove_file(path).unwrap(),
+                            Ok(_) => {
+                                fs::remove_file(path).unwrap();
+                                count += 1;
+                            }
                             Err(_) => {
                                 app_message(
                                     "Move Failed",
@@ -117,9 +119,15 @@ fn app_logic() {
                             }
                         }
                     }
-                    Ok(_) => (),
+                    Ok(_) => {
+                        count += 1;
+                    }
                 }
             }
+        }
+
+        if count > 0 {
+            app_message("Moved", format!("{} files", count).as_str());
         }
     }
 }
