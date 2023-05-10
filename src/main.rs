@@ -89,27 +89,7 @@ fn app_logic() {
             let paths = glob_with(path_and_pattern.to_str().unwrap(), options).unwrap();
             (paths, destination_path)
         })
-        .map(|(paths, destination_path)| {
-            paths
-                .filter_map(|f| f.ok())
-                .map(|path| {
-                    (
-                        path.to_owned(),
-                        destination_path.join(&path.file_name().unwrap()),
-                    )
-                })
-                .map(|(from, to)| {
-                    fs::rename(&from, &to).or_else(|_| {
-                        // try copy and delete if that does not work
-                        fs::copy(&from, &to).and_then(|_| {
-                            fs::remove_file(&from).unwrap();
-                            Ok(())
-                        })
-                    })
-                })
-                .filter_map(|f| f.ok())
-                .count()
-        })
+        .map(|(p, d)| move_files(p, d))
         .sum();
 
     if result > 0 {
@@ -118,6 +98,29 @@ fn app_logic() {
             format!("{} {}", result, if result > 1 { "files" } else { "file" }).as_str(),
         );
     }
+}
+
+/// moves the files from the `paths` to `destination_path`
+fn move_files(paths: Paths, destination_path: PathBuf) -> usize {
+    paths
+        .filter_map(|f| f.ok())
+        .map(|path| {
+            (
+                path.to_owned(),
+                destination_path.join(&path.file_name().unwrap()),
+            )
+        })
+        .map(|(from, to)| {
+            fs::rename(&from, &to).or_else(|_| {
+                // try copy and delete if that does not work
+                fs::copy(&from, &to).and_then(|_| {
+                    fs::remove_file(&from).unwrap();
+                    Ok(())
+                })
+            })
+        })
+        .filter_map(|f| f.ok())
+        .count()
 }
 
 fn setup_tray() -> (std::sync::mpsc::Receiver<TrayMessage>, TrayItem) {
