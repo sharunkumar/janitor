@@ -31,12 +31,18 @@ fn main() {
         thread::sleep(Duration::from_secs(1));
     });
 
-    let handler = ConfigEventHandler;
-
-    let mut debouncer = new_debouncer_opt::<ConfigEventHandler, notify::RecommendedWatcher>(
+    let mut debouncer = new_debouncer_opt::<_, notify::RecommendedWatcher>(
         Duration::from_millis(500),
         None,
-        handler,
+        |event| {
+            if let Ok(_) = event {
+                println!("Config changed");
+                let new_config = read_config();
+                let mut config = CONFIG.lock().unwrap();
+                config.patterns = new_config.patterns;
+                println!("New config: {:?}", &config);
+            }
+        },
         notify::Config::default(),
     )
     .unwrap();
@@ -173,19 +179,6 @@ fn app_message(summary: &str, message: &str) {
 
 enum TrayMessage {
     Quit,
-}
-
-struct ConfigEventHandler;
-impl DebounceEventHandler for ConfigEventHandler {
-    fn handle_event(&mut self, event: DebounceEventResult) {
-        if let Ok(_) = event {
-            println!("Config changed");
-            let new_config = read_config();
-            let mut config = CONFIG.lock().unwrap();
-            config.patterns = new_config.patterns;
-            println!("New config: {:?}", &config);
-        }
-    }
 }
 
 fn get_thread_sender(sender: &mpsc::Sender<TrayMessage>) -> Arc<Mutex<mpsc::Sender<TrayMessage>>> {

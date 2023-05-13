@@ -8,7 +8,7 @@ fn main() {
         Command::new("taskkill")
             .args(&["/F", "/IM", "janitor.exe"])
             .spawn()
-            .unwrap(); // replace with your command and arguments
+            .unwrap();
     }
     Build::new().compile("icons/app-resources.rc").unwrap();
     println!("cargo:rerun-if-changed=icons/app-resources.rc");
