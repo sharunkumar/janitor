@@ -15,6 +15,8 @@ use tray_item::*;
 
 lazy_static! {
     static ref CONFIG: Mutex<Config> = Mutex::new(read_config());
+    static ref TRAY: Mutex<TrayItem> =
+        Mutex::new(TrayItem::new("Janitor", IconSource::Resource("aa-exe-icon")).unwrap());
 }
 
 fn main() {
@@ -31,16 +33,19 @@ fn main() {
         thread::sleep(Duration::from_secs(1));
     });
 
+    let rx_tray = setup_tray();
+
     let mut debouncer = new_debouncer_opt::<_, notify::RecommendedWatcher>(
         Duration::from_millis(500),
         None,
-        |event| {
+        move |event| {
             if let Ok(_) = event {
                 println!("Config changed");
                 let new_config = read_config();
                 let mut config = CONFIG.lock().unwrap();
                 config.patterns = new_config.patterns;
                 println!("New config: {:?}", &config);
+                blink_tray(1);
             }
         },
         notify::Config::default(),
@@ -52,7 +57,6 @@ fn main() {
         .watch(&get_config_path(), notify::RecursiveMode::NonRecursive)
         .unwrap();
 
-    let (rx_tray, mut _tray) = setup_tray();
     loop {
         match rx_tray.recv() {
             Ok(TrayMessage::Quit) => {
@@ -62,6 +66,19 @@ fn main() {
             _ => {}
         }
     }
+}
+
+fn blink_tray(n: usize) {
+    thread::spawn(move || {
+        let mut tray = TRAY.lock().unwrap();
+
+        for _ in 0..n {
+            tray.set_icon(IconSource::Resource("fire-blue")).unwrap();
+            thread::sleep(Duration::from_millis(250));
+            tray.set_icon(IconSource::Resource("aa-exe-icon")).unwrap();
+            thread::sleep(Duration::from_millis(250));
+        }
+    });
 }
 
 fn app_logic() {
@@ -89,6 +106,7 @@ fn app_logic() {
         .sum();
 
     if result > 0 {
+        blink_tray(result);
         app_message(
             "Moved",
             format!("{} {}", result, if result > 1 { "files" } else { "file" }).as_str(),
@@ -119,8 +137,8 @@ fn move_files(paths: Paths, destination_path: PathBuf) -> usize {
         .count()
 }
 
-fn setup_tray() -> (std::sync::mpsc::Receiver<TrayMessage>, TrayItem) {
-    let mut tray = TrayItem::new("Janitor", IconSource::Resource("aa-exe-icon")).unwrap();
+fn setup_tray() -> std::sync::mpsc::Receiver<TrayMessage> {
+    let mut tray = TRAY.lock().unwrap();
 
     tray.add_label("Janitor is running...").unwrap();
 
@@ -134,7 +152,7 @@ fn setup_tray() -> (std::sync::mpsc::Receiver<TrayMessage>, TrayItem) {
     })
     .unwrap();
 
-    return (rx, tray);
+    rx
 }
 
 fn read_config() -> Config {
