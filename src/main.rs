@@ -31,24 +31,12 @@ fn main() {
         thread::sleep(Duration::from_secs(1));
     });
 
-    std::thread::spawn(|| {
-        let (rx_tray, mut _tray) = setup_tray();
-        loop {
-            match rx_tray.recv() {
-                Ok(TrayMessage::Quit) => {
-                    println!("Quit");
-                    std::process::exit(0);
-                }
-                _ => {}
-            }
-        }
-    });
+    let handler = ConfigEventHandler;
 
-    let (tx, rx) = std::sync::mpsc::channel();
-    let mut debouncer = new_debouncer_opt::<_, notify::RecommendedWatcher>(
+    let mut debouncer = new_debouncer_opt::<ConfigEventHandler, notify::RecommendedWatcher>(
         Duration::from_millis(500),
         None,
-        tx,
+        handler,
         notify::Config::default(),
     )
     .unwrap();
@@ -58,13 +46,15 @@ fn main() {
         .watch(&get_config_path(), notify::RecursiveMode::NonRecursive)
         .unwrap();
 
-    for events in rx {
-        events.into_iter().for_each(|e| {
-            println!("{:?}", e);
-            let new_config = read_config();
-            let mut config = CONFIG.lock().unwrap();
-            config.patterns = new_config.patterns;
-        });
+    let (rx_tray, mut _tray) = setup_tray();
+    loop {
+        match rx_tray.recv() {
+            Ok(TrayMessage::Quit) => {
+                println!("Quit");
+                std::process::exit(0);
+            }
+            _ => {}
+        }
     }
 }
 
@@ -183,6 +173,19 @@ fn app_message(summary: &str, message: &str) {
 
 enum TrayMessage {
     Quit,
+}
+
+struct ConfigEventHandler;
+impl DebounceEventHandler for ConfigEventHandler {
+    fn handle_event(&mut self, event: DebounceEventResult) {
+        if let Ok(_) = event {
+            println!("Config changed");
+            let new_config = read_config();
+            let mut config = CONFIG.lock().unwrap();
+            config.patterns = new_config.patterns;
+            println!("New config: {:?}", &config);
+        }
+    }
 }
 
 fn get_thread_sender(sender: &mpsc::Sender<TrayMessage>) -> Arc<Mutex<mpsc::Sender<TrayMessage>>> {
