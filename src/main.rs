@@ -14,6 +14,7 @@ use std::time::Duration;
 use tray_item::*;
 
 lazy_static! {
+    static ref CONFIG_PATH: PathBuf = get_config_path();
     static ref CONFIG: Mutex<Config> = Mutex::new(read_config());
     static ref TRAY: Mutex<TrayItem> =
         Mutex::new(TrayItem::new("Janitor", IconSource::Resource("aa-exe-icon")).unwrap());
@@ -28,33 +29,24 @@ fn main() {
         std::process::exit(1);
     }
 
-    std::thread::spawn(|| loop {
-        app_logic();
-        thread::sleep(Duration::from_secs(1));
-    });
+    startup_run();
 
     let rx_tray = setup_tray();
 
     let mut debouncer = new_debouncer_opt::<_, notify::RecommendedWatcher>(
         Duration::from_millis(500),
         None,
-        move |event| {
-            if let Ok(_) = event {
-                println!("Config changed");
-                let new_config = read_config();
-                let mut config = CONFIG.lock().unwrap();
-                config.patterns = new_config.patterns;
-                println!("New config: {:?}", &config);
-                blink_tray(1);
-            }
-        },
+        DownloadHandler,
         notify::Config::default(),
     )
     .unwrap();
 
     debouncer
         .watcher()
-        .watch(&get_config_path(), notify::RecursiveMode::NonRecursive)
+        .watch(
+            &CONFIG_PATH.parent().unwrap(),
+            notify::RecursiveMode::NonRecursive,
+        )
         .unwrap();
 
     loop {
@@ -64,6 +56,66 @@ fn main() {
                 std::process::exit(0);
             }
             _ => {}
+        }
+    }
+}
+
+fn refresh_config() {
+    let new_config = read_config();
+    let mut config = CONFIG.lock().unwrap();
+    config.patterns = new_config.patterns;
+    // println!("New config: {:?}", &config);
+}
+
+struct DownloadHandler;
+
+impl DebounceEventHandler for DownloadHandler {
+    fn handle_event(&mut self, event: DebounceEventResult) {
+        let Ok(event) = event else { return };
+        // println!("Event: {:?}", event);
+        let any: Vec<PathBuf> = event
+            .into_iter()
+            .filter(|e| e.kind == DebouncedEventKind::Any && e.path.exists())
+            .map(|e| e.path)
+            .collect();
+
+        if &any.len() > &0 {
+            refresh_config();
+            let config = CONFIG.lock().unwrap();
+            let patterns: Vec<(Pattern, String)> = config
+                .patterns
+                .clone()
+                .into_iter()
+                .filter_map(|collec| Pattern::new(&collec.0).ok().map(|p| (p, collec.1)))
+                .collect();
+
+            let result = any
+                .into_iter()
+                .filter_map(|path| {
+                    // dbg!(&path);
+                    let matching = &patterns
+                        .clone()
+                        .into_iter()
+                        .filter(|collec| collec.0.matches_path(&path.as_path()))
+                        .nth(0);
+
+                    // dbg!(&path);
+
+                    matching.to_owned().map(|collec| {
+                        (
+                            path.to_owned(),
+                            PathBuf::from(collec.1.as_str()).join(&path.file_name().unwrap()),
+                        )
+                    })
+                })
+                .filter_map(|(from, to)| {
+                    let movef = move_file(from, to);
+                    // dbg!(&movef);
+                    movef.ok()
+                })
+                .count();
+
+            blink_tray(result);
         }
     }
 }
@@ -81,7 +133,7 @@ fn blink_tray(n: usize) {
     });
 }
 
-fn app_logic() {
+fn startup_run() {
     let config = CONFIG.lock().unwrap();
 
     let options = MatchOptions {
@@ -98,7 +150,7 @@ fn app_logic() {
         .map(|(pattern, destination_path)| {
             fs::create_dir_all(&destination_path).unwrap();
             // get files from downloads directory that match pattern
-            let path_and_pattern = get_config_path().parent().unwrap().join(&pattern);
+            let path_and_pattern = CONFIG_PATH.parent().unwrap().join(&pattern);
             let paths = glob_with(path_and_pattern.to_str().unwrap(), options).unwrap();
             (paths, destination_path)
         })
@@ -124,17 +176,21 @@ fn move_files(paths: Paths, destination_path: PathBuf) -> usize {
                 destination_path.join(&path.file_name().unwrap()),
             )
         })
-        .map(|(from, to)| {
-            fs::rename(&from, &to).or_else(|_| {
-                // try copy and delete if that does not work
-                fs::copy(&from, &to).and_then(|_| {
-                    fs::remove_file(&from).unwrap();
-                    Ok(())
-                })
-            })
-        })
+        .map(|(from, to)| move_file(from, to))
         .filter_map(|f| f.ok())
         .count()
+}
+
+fn move_file(from: PathBuf, to: PathBuf) -> Result<(), std::io::Error> {
+    // dbg!(&from, &to);s
+    // thread::sleep(Duration::from_secs(2));
+    fs::rename(&from, &to).or_else(|_| {
+        // try copy and delete if that does not work
+        fs::copy(&from, &to).and_then(|_| {
+            fs::remove_file(&from).unwrap();
+            Ok(())
+        })
+    })
 }
 
 fn setup_tray() -> std::sync::mpsc::Receiver<TrayMessage> {
@@ -156,7 +212,7 @@ fn setup_tray() -> std::sync::mpsc::Receiver<TrayMessage> {
 }
 
 fn read_config() -> Config {
-    let config_path = get_config_path();
+    let config_path = CONFIG_PATH.to_owned();
 
     if !(config_path.exists()) {
         app_message("No config file found", "writing default config");
