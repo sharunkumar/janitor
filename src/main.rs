@@ -79,6 +79,18 @@ impl DebounceEventHandler for DownloadHandler {
             .map(|e| e.path)
             .collect();
 
+        if &any
+            .clone()
+            .into_iter()
+            .any(|f| f.as_os_str() == CONFIG_PATH.as_os_str())
+            == &true
+        {
+            println!("config changed!");
+            refresh_config();
+            startup_run();
+            return;
+        }
+
         if &any.len() > &0 {
             refresh_config();
             let config = CONFIG.lock().unwrap();
