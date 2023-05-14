@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 description = "A service that cleans up your downloads folder"
 license = "MIT"
+repository = "https://github.com/sharunkumar/janitor"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
