@@ -1,4 +1,4 @@
-# janitor
+# janitor-service
 
 just an app that watches the downloads folder for specific files and moves them to a separate directory
 
