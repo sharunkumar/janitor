@@ -22,7 +22,7 @@ lazy_static! {
 
 fn main() {
     // check if its a single instance
-    let instance = single_instance::SingleInstance::new("janitor").unwrap();
+    let instance = single_instance::SingleInstance::new(env!("CARGO_PKG_NAME")).unwrap();
 
     if !instance.is_single() {
         println!("Another instance of janitor is already running");
@@ -212,7 +212,8 @@ fn move_file(from: PathBuf, to: PathBuf) -> Result<(), std::io::Error> {
 fn setup_tray() -> std::sync::mpsc::Receiver<TrayMessage> {
     let mut tray = TRAY.lock().unwrap();
 
-    tray.add_label("Janitor is running...").unwrap();
+    tray.add_label(format!("{} v{}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION")).as_str())
+        .unwrap();
 
     let (tx, rx) = mpsc::channel();
 
