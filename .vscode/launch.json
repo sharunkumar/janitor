@@ -7,15 +7,15 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'janitor'",
+            "name": "Debug executable 'janitor-service'",
             "cargo": {
                 "args": [
                     "build",
-                    "--bin=janitor",
-                    "--package=janitor"
+                    "--bin=janitor-service",
+                    "--package=janitor-service"
                 ],
                 "filter": {
-                    "name": "janitor",
+                    "name": "janitor-service",
                     "kind": "bin"
                 }
             },
@@ -25,16 +25,16 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in executable 'janitor'",
+            "name": "Debug unit tests in executable 'janitor-service'",
             "cargo": {
                 "args": [
                     "test",
                     "--no-run",
-                    "--bin=janitor",
-                    "--package=janitor"
+                    "--bin=janitor-service",
+                    "--package=janitor-service"
                 ],
                 "filter": {
-                    "name": "janitor",
+                    "name": "janitor-service",
                     "kind": "bin"
                 }
             },
