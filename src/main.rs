@@ -127,7 +127,7 @@ impl DebounceEventHandler for DownloadHandler {
                 })
                 .count();
 
-            blink_tray(result);
+            report_files_moved(result);
         }
     }
 }
@@ -169,6 +169,10 @@ fn startup_run() {
         .map(|(p, d)| move_files(p, d))
         .sum();
 
+    report_files_moved(result);
+}
+
+fn report_files_moved(result: usize) {
     if result > 0 {
         blink_tray(result);
         app_message(
