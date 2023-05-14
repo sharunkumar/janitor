@@ -75,7 +75,7 @@ impl DebounceEventHandler for DownloadHandler {
         // println!("Event: {:?}", event);
         let any: Vec<PathBuf> = event
             .into_iter()
-            .filter(|e| e.kind == DebouncedEventKind::Any && e.path.exists())
+            .filter(|e| e.kind == DebouncedEventKind::Any && e.path.exists() && e.path.is_file())
             .map(|e| e.path)
             .collect();
 
