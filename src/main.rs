@@ -215,13 +215,13 @@ fn setup_tray() -> std::sync::mpsc::Receiver<TrayMessage> {
     tray.add_label(format!("{} v{}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION")).as_str())
         .unwrap();
 
-    let (tx, rx) = mpsc::channel();
+    let (tx, rx) = mpsc::sync_channel(1);
 
     tray.inner_mut().add_separator().unwrap();
 
-    let quit_tx = get_thread_sender(&tx);
+    let quit_tx = tx.clone();
     tray.add_menu_item("Quit", move || {
-        quit_tx.lock().unwrap().send(TrayMessage::Quit).unwrap();
+        quit_tx.send(TrayMessage::Quit).unwrap();
     })
     .unwrap();
 
@@ -270,11 +270,4 @@ fn app_message(summary: &str, message: &str) {
 
 enum TrayMessage {
     Quit,
-}
-
-fn get_thread_sender(sender: &mpsc::Sender<TrayMessage>) -> Arc<Mutex<mpsc::Sender<TrayMessage>>> {
-    let tx = sender.clone();
-    let sender = Arc::new(Mutex::new(tx));
-    let thread_sender = sender.clone();
-    thread_sender
 }
