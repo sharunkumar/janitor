@@ -25,7 +25,7 @@ fn main() {
     let instance = single_instance::SingleInstance::new(env!("CARGO_PKG_NAME")).unwrap();
 
     if !instance.is_single() {
-        println!("Another instance of janitor is already running");
+        eprintln!("Another instance of janitor is already running");
         std::process::exit(1);
     }
 
