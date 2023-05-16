@@ -72,7 +72,7 @@ struct DownloadHandler;
 impl DebounceEventHandler for DownloadHandler {
     fn handle_event(&mut self, event: DebounceEventResult) {
         let Ok(event) = event else { return };
-        // println!("Event: {:?}", event);
+        println!("Event: {:?}", event);
         let any: Vec<PathBuf> = event
             .into_iter()
             .filter(|e| e.kind == DebouncedEventKind::Any && e.path.exists() && e.path.is_file())
