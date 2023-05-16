@@ -113,9 +113,9 @@ impl DebounceEventHandler for DownloadHandler {
 
                     // dbg!(&path);
 
-                    matching.to_owned().map(|collec| {
+                    matching.map(|collec| {
                         (
-                            path.to_owned(),
+                            path,
                             PathBuf::from(collec.1.as_str()).join(&path.file_name().unwrap()),
                         )
                     })
@@ -156,8 +156,7 @@ fn startup_run() {
 
     let result: usize = config
         .patterns
-        .to_owned()
-        .into_iter()
+        .iter()
         .map(|(pattern, destination)| (pattern, Path::new(&destination).to_owned()))
         .map(|(pattern, destination_path)| {
             fs::create_dir_all(&destination_path).unwrap();
