@@ -73,41 +73,41 @@ impl DebounceEventHandler for DownloadHandler {
     fn handle_event(&mut self, event: DebounceEventResult) {
         let Ok(event) = event else { return };
         println!("Event: {:?}", event);
-        let any: Vec<PathBuf> = event
-            .into_iter()
-            .filter(|e| e.kind == DebouncedEventKind::Any && e.path.exists() && e.path.is_file())
-            .map(|e| e.path)
-            .collect();
 
-        if &any
-            .clone()
-            .into_iter()
-            .any(|f| f.as_os_str() == CONFIG_PATH.as_os_str())
-            == &true
+        // check if config changed
+        if event
+            .iter()
+            .any(|e| e.path.as_os_str() == CONFIG_PATH.as_os_str())
         {
+            // if config is changed, dry run
             println!("config changed!");
             refresh_config();
             startup_run();
             return;
         }
 
-        if &any.len() > &0 {
+        // else lazer down the files changed, and move them if needed
+        let any: Vec<&PathBuf> = event
+            .iter()
+            .filter(|e| e.kind == DebouncedEventKind::Any && e.path.exists() && e.path.is_file())
+            .map(|e| &e.path)
+            .collect();
+
+        if any.len() > 0 {
             refresh_config();
             let config = CONFIG.lock().unwrap();
-            let patterns: Vec<(Pattern, String)> = config
+            let patterns: Vec<(Pattern, &String)> = config
                 .patterns
-                .clone()
-                .into_iter()
-                .filter_map(|collec| Pattern::new(&collec.0).ok().map(|p| (p, collec.1)))
+                .iter()
+                .filter_map(|collec| Pattern::new(&collec.0).ok().map(|p| (p, &collec.1)))
                 .collect();
 
             let result = any
-                .into_iter()
-                .filter_map(|path| {
+                .iter()
+                .filter_map(|&path| {
                     // dbg!(&path);
                     let matching = &patterns
-                        .clone()
-                        .into_iter()
+                        .iter()
                         .filter(|collec| collec.0.matches_path(&path.as_path()))
                         .nth(0);
 
@@ -121,7 +121,7 @@ impl DebounceEventHandler for DownloadHandler {
                     })
                 })
                 .filter_map(|(from, to)| {
-                    let movef = move_file(from, to);
+                    let movef = move_file(from.to_owned(), to.to_owned());
                     // dbg!(&movef);
                     movef.ok()
                 })
@@ -250,6 +250,16 @@ fn read_config() -> Config {
 }
 
 fn write_default_config(config_path: &PathBuf) {
+    // if a file already exists at the path, rename it
+    if config_path.exists() {
+        println!("Renaming existing config");
+        fs::rename(
+            &config_path,
+            &config_path.with_file_name("janitor-old.toml"),
+        )
+        .unwrap();
+    }
+
     fs::write(
         &config_path,
         toml::to_string(&ExampleConfig::default()).unwrap(),
