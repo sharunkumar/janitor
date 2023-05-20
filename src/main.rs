@@ -16,8 +16,7 @@ use tray_item::*;
 lazy_static! {
     static ref CONFIG_PATH: PathBuf = get_config_path();
     static ref CONFIG: Mutex<Config> = Mutex::new(read_config());
-    static ref TRAY: Mutex<TrayItem> =
-        Mutex::new(TrayItem::new("Janitor", IconSource::Resource("aa-exe-icon")).unwrap());
+    // static ref TRAY: Mutex<TrayItem> = Mutex::new(TrayItem::new("Janitor", IconSource::Resource("aa-exe-icon")).unwrap());
 }
 
 fn main() {
@@ -31,7 +30,14 @@ fn main() {
 
     startup_run();
 
-    let rx_tray = setup_tray();
+    let icon = "aa-exe-icon";
+
+    #[cfg(macos)]
+    let icon = "";
+
+    let mut tray = TrayItem::new("Janitor", IconSource::Resource(icon)).unwrap();
+
+    let rx_tray = setup_tray(&mut tray);
 
     let mut debouncer = new_debouncer_opt::<_, notify::RecommendedWatcher>(
         Duration::from_millis(500),
@@ -132,18 +138,16 @@ impl DebounceEventHandler for DownloadHandler {
     }
 }
 
-fn blink_tray(n: usize) {
-    thread::spawn(move || {
-        let mut tray = TRAY.lock().unwrap();
-
-        for _ in 0..n {
-            tray.set_icon(IconSource::Resource("fire-blue")).unwrap();
-            thread::sleep(Duration::from_millis(250));
-            tray.set_icon(IconSource::Resource("aa-exe-icon")).unwrap();
-            thread::sleep(Duration::from_millis(250));
-        }
-    });
-}
+// fn blink_tray(n: usize, tray: TrayItem) {
+//     thread::spawn(move || {
+//         for _ in 0..n {
+//             tray.set_icon(IconSource::Resource("fire-blue")).unwrap();
+//             thread::sleep(Duration::from_millis(250));
+//             tray.set_icon(IconSource::Resource("aa-exe-icon")).unwrap();
+//             thread::sleep(Duration::from_millis(250));
+//         }
+//     });
+// }
 
 fn startup_run() {
     let config = CONFIG.lock().unwrap();
@@ -173,7 +177,7 @@ fn startup_run() {
 
 fn report_files_moved(result: usize) {
     if result > 0 {
-        blink_tray(result);
+        // blink_tray(result);
         app_message(
             "Moved",
             format!("{} {}", result, if result > 1 { "files" } else { "file" }).as_str(),
@@ -208,9 +212,7 @@ fn move_file(from: PathBuf, to: PathBuf) -> Result<(), std::io::Error> {
     })
 }
 
-fn setup_tray() -> std::sync::mpsc::Receiver<TrayMessage> {
-    let mut tray = TRAY.lock().unwrap();
-
+fn setup_tray(tray: &mut TrayItem) -> std::sync::mpsc::Receiver<TrayMessage> {
     tray.add_label(format!("{} v{}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION")).as_str())
         .unwrap();
 
