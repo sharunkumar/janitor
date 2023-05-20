@@ -1,3 +1,6 @@
+#[cfg(windows)]
+extern crate windres;
+
 use std::process::Command;
 
 use windres::Build;

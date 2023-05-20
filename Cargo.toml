@@ -20,5 +20,5 @@ single-instance = "0.3.3"
 toml = "0.7.3"
 tray-item = "0.8.0"
 
-[build-dependencies]
+[target.'cfg(windows)'.build-dependencies]
 windres = "0.2.2"
