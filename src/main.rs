@@ -218,6 +218,7 @@ fn setup_tray(tray: &mut TrayItem) -> std::sync::mpsc::Receiver<TrayMessage> {
 
     let (tx, rx) = mpsc::sync_channel(1);
 
+    #[cfg(windows)]
     tray.inner_mut().add_separator().unwrap();
 
     let quit_tx = tx.clone();
