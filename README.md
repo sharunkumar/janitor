@@ -1,6 +1,6 @@
 # janitor-service
 
-An app that watches the downloads folder for specific files and moves them to a separate directory
+A configurable downloads organizer written in rust
 
 ## Usage
 
