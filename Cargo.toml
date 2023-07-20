@@ -19,6 +19,11 @@ png = "0.16.8"
 serde = { version = "1.0.167", features = ["derive"] }
 single-instance = "0.3.3"
 toml = "0.7.6"
+
+[target.'cfg(windows)'.dependencies]
+tray-item = { version = "0.8.0" }
+
+[target.'cfg(not(windows))'.dependencies]
 tray-item = { version = "0.8.0", features = ["ksni"] }
 
 [target.'cfg(windows)'.build-dependencies]
