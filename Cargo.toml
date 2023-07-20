@@ -15,10 +15,11 @@ lazy_static = "1.4.0"
 notify = "6.0.1"
 notify-debouncer-mini = "0.3.0"
 notify-rust = "4.8.0"
+png = "0.16.8"
 serde = { version = "1.0.167", features = ["derive"] }
 single-instance = "0.3.3"
 toml = "0.7.6"
-tray-item = "0.8.0"
+tray-item = { version = "0.8.0", features = ["ksni"] }
 
 [target.'cfg(windows)'.build-dependencies]
 windres = "0.2.2"
