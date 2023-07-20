@@ -1,6 +1,6 @@
 [package]
 name = "janitor-service"
-version = "0.1.7"
+version = "0.1.8"
 edition = "2021"
 description = "A service that cleans up your downloads folder"
 license = "MIT"
@@ -23,8 +23,8 @@ toml = "0.7.6"
 [target.'cfg(windows)'.dependencies]
 tray-item = { version = "0.8.0" }
 
-[target.'cfg(not(windows))'.dependencies]
-tray-item = { version = "0.8.0", features = ["ksni"] }
-
 [target.'cfg(windows)'.build-dependencies]
 windres = "0.2.2"
+
+[target.'cfg(not(windows))'.dependencies]
+tray-item = { version = "0.8.0", features = ["ksni"] }

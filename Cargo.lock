@@ -748,7 +748,7 @@ dependencies = [
 
 [[package]]
 name = "janitor-service"
-version = "0.1.7"
+version = "0.1.8"
 dependencies = [
  "directories",
  "glob",
