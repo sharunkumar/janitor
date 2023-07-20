@@ -1,8 +1,11 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod config;
+mod icons;
 use config::*;
 use glob::*;
+use icons::get_app_icon;
+use icons::get_blue_icon;
 use lazy_static::lazy_static;
 use notify_debouncer_mini::*;
 use notify_rust::Notification;
@@ -17,7 +20,7 @@ lazy_static! {
     static ref CONFIG_PATH: PathBuf = get_config_path();
     static ref CONFIG: Mutex<Config> = Mutex::new(read_config());
     static ref TRAY: Mutex<TrayItem> =
-        Mutex::new(TrayItem::new("Janitor", IconSource::Resource("aa-exe-icon")).unwrap());
+        Mutex::new(TrayItem::new("Janitor", get_app_icon()).unwrap());
 }
 
 fn main() {
@@ -137,9 +140,9 @@ fn blink_tray(n: usize) {
         let mut tray = TRAY.lock().unwrap();
 
         for _ in 0..n {
-            tray.set_icon(IconSource::Resource("fire-blue")).unwrap();
+            tray.set_icon(get_blue_icon()).unwrap();
             thread::sleep(Duration::from_millis(250));
-            tray.set_icon(IconSource::Resource("aa-exe-icon")).unwrap();
+            tray.set_icon(get_app_icon()).unwrap();
             thread::sleep(Duration::from_millis(250));
         }
     });
@@ -216,6 +219,7 @@ fn setup_tray() -> std::sync::mpsc::Receiver<TrayMessage> {
 
     let (tx, rx) = mpsc::sync_channel(1);
 
+    #[cfg(all(target_os = "windows"))]
     tray.inner_mut().add_separator().unwrap();
 
     let quit_tx = tx.clone();
