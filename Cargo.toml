@@ -27,4 +27,3 @@ windres = "0.2.2"
 
 [target.'cfg(not(windows))'.dependencies]
 tray-item = { version = "0.8.0", features = ["ksni"] }
-png = "0.16.8"
