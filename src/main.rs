@@ -9,6 +9,7 @@ use icons::get_blue_icon;
 use lazy_static::lazy_static;
 use notify_debouncer_mini::*;
 use notify_rust::Notification;
+use std::env;
 use std::fs;
 use std::path::*;
 use std::sync::*;
@@ -24,6 +25,13 @@ lazy_static! {
 }
 
 fn main() {
+    if let Some(arg1) = env::args().nth(1) {
+        if arg1.eq_ignore_ascii_case("systemd") {
+            let service = include_str!("systemd/janitor.service");
+            println!("{}", service);
+            std::process::exit(0);
+        }
+    }
     // check if its a single instance
     let instance = single_instance::SingleInstance::new(env!("CARGO_PKG_NAME")).unwrap();
 
