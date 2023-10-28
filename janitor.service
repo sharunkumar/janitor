@@ -2,7 +2,7 @@
 Description=Janitor
 
 [Service]
-ExecStart=~/.cargo/bin/janitor-service
+ExecStart=/home/sharun/.cargo/bin/janitor-service
 Restart=always
 
 [Install]
