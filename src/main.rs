@@ -25,13 +25,17 @@ lazy_static! {
 }
 
 fn main() {
-    if let Some(arg1) = env::args().nth(1) {
-        if arg1.eq_ignore_ascii_case("systemd") {
-            let service = include_str!("systemd/janitor.service");
-            println!("{}", service);
-            std::process::exit(0);
+    #[cfg(not(target_os = "windows"))]
+    {
+        if let Some(arg1) = env::args().nth(1) {
+            if arg1.eq_ignore_ascii_case("systemd") {
+                let service = include_str!("systemd/janitor.service");
+                println!("{}", service);
+                std::process::exit(0);
+            }
         }
     }
+
     // check if its a single instance
     let instance = single_instance::SingleInstance::new(env!("CARGO_PKG_NAME")).unwrap();
 
