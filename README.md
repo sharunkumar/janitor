@@ -29,7 +29,6 @@ systemctl --user enable janitor.service --now
 journalctl --user -u janitor.service --follow
 
 # Update when using systemd
-systemctl --user stop janitor.service
 cargo install janitor-service
-systemctl --user start janitor.service
+systemctl --user restart janitor.service
 ```
