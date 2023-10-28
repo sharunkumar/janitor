@@ -22,6 +22,7 @@ lazy_static! {
     static ref CONFIG: Mutex<JanitorConfig> = Mutex::new(read_config());
     static ref TRAY: Mutex<TrayItem> =
         Mutex::new(TrayItem::new("Janitor", get_app_icon()).unwrap());
+    static ref SYSTEMD: bool = env::var("SYSTEMD").is_ok();
 }
 
 fn main() {
@@ -34,6 +35,14 @@ fn main() {
                 std::process::exit(0);
             }
         }
+    }
+
+    if *SYSTEMD {
+        println!(
+            "{} v{} running under systemd",
+            env!("CARGO_PKG_NAME"),
+            env!("CARGO_PKG_VERSION")
+        );
     }
 
     // check if its a single instance
@@ -224,19 +233,35 @@ fn move_file(from: PathBuf, to: PathBuf) -> Result<(), std::io::Error> {
 fn setup_tray() -> std::sync::mpsc::Receiver<TrayMessage> {
     let mut tray = TRAY.lock().unwrap();
 
-    tray.add_label(format!("{} v{}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION")).as_str())
+    if !*SYSTEMD {
+        tray.add_label(
+            format!("{} v{}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION")).as_str(),
+        )
         .unwrap();
+    } else {
+        tray.add_label(
+            format!(
+                "{} v{} - systemd",
+                env!("CARGO_PKG_NAME"),
+                env!("CARGO_PKG_VERSION")
+            )
+            .as_str(),
+        )
+        .unwrap();
+    }
 
     let (tx, rx) = mpsc::sync_channel(1);
 
     #[cfg(all(target_os = "windows"))]
     tray.inner_mut().add_separator().unwrap();
 
-    let quit_tx = tx.clone();
-    tray.add_menu_item("Quit", move || {
-        quit_tx.send(TrayMessage::Quit).unwrap();
-    })
-    .unwrap();
+    if !*SYSTEMD {
+        let quit_tx = tx.clone();
+        tray.add_menu_item("Quit", move || {
+            quit_tx.send(TrayMessage::Quit).unwrap();
+        })
+        .unwrap();
+    }
 
     rx
 }

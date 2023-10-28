@@ -2,6 +2,7 @@
 Description=Janitor
 
 [Service]
+Environment="SYSTEMD=1"
 ExecStart="%h/.cargo/bin/janitor-service"
 Restart=always
 
