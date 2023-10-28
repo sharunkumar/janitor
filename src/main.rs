@@ -18,7 +18,7 @@ use tray_item::*;
 
 lazy_static! {
     static ref CONFIG_PATH: PathBuf = get_config_path();
-    static ref CONFIG: Mutex<Config> = Mutex::new(read_config());
+    static ref CONFIG: Mutex<JanitorConfig> = Mutex::new(read_config());
     static ref TRAY: Mutex<TrayItem> =
         Mutex::new(TrayItem::new("Janitor", get_app_icon()).unwrap());
 }
@@ -231,7 +231,7 @@ fn setup_tray() -> std::sync::mpsc::Receiver<TrayMessage> {
     rx
 }
 
-fn read_config() -> Config {
+fn read_config() -> JanitorConfig {
     let config_path = CONFIG_PATH.to_owned();
 
     if !(config_path.exists()) {
@@ -239,7 +239,7 @@ fn read_config() -> Config {
         write_default_config(&config_path);
     }
 
-    let configuration = toml::from_str::<Config>(&fs::read_to_string(&config_path).unwrap());
+    let configuration = toml::from_str::<JanitorConfig>(&fs::read_to_string(&config_path).unwrap());
 
     match configuration {
         Ok(clean_config) => clean_config,

@@ -3,7 +3,7 @@ use serde::*;
 use std::path::PathBuf;
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Config {
+pub struct JanitorConfig {
     pub patterns: Vec<(String, String)>,
 }
 
