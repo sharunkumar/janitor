@@ -13,7 +13,7 @@ directories = "5.0.1"
 glob = "0.3.1"
 lazy_static = "1.4.0"
 notify = "6.1.1"
-notify-debouncer-mini = "0.3.0"
+notify-debouncer-mini = "0.4.1"
 notify-rust = "4.9.0"
 serde = { version = "1.0.186", features = ["derive"] }
 single-instance = "0.3.3"

@@ -37,10 +37,8 @@ fn main() {
     let rx_tray = setup_tray();
 
     let mut debouncer = new_debouncer_opt::<_, notify::RecommendedWatcher>(
-        Duration::from_millis(500),
-        None,
+        notify_debouncer_mini::Config::default(),
         DownloadHandler,
-        notify::Config::default(),
     )
     .unwrap();
 
