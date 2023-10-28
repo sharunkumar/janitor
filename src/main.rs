@@ -27,7 +27,7 @@ lazy_static! {
 fn main() {
     if let Some(arg1) = env::args().nth(1) {
         if arg1.eq_ignore_ascii_case("systemd") {
-            let service = include_str!("janitor.service");
+            let service = include_str!("systemd/janitor.service");
             println!("{}", service);
             std::process::exit(0);
         }

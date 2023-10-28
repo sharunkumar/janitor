@@ -21,6 +21,10 @@ fun fact: this is my first ever rust app
 ```bash
 # Generate the unit file in into the user systemd folder
 janitor-service systemd > ~/.config/systemd/user/janitor.service
+
 # Enable and start the service
 systemctl --user enable janitor.service --now
+
+# Check program output / logs
+journalctl --user -u janitor.service --follow
 ```
