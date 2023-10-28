@@ -2,7 +2,7 @@
 
 A configurable downloads organizer written in rust
 
-## Installation
+## Installation / Update
 
 ```bash
 cargo install janitor-service
@@ -16,7 +16,7 @@ cargo install janitor-service
 
 fun fact: this is my first ever rust app
 
-## Configuring Auto Start/Restart with SystemD
+## Configuring Auto Start/Restart with SystemD (Not available on Windows)
 
 ```bash
 # Generate the unit file in into the user systemd folder
@@ -27,4 +27,9 @@ systemctl --user enable janitor.service --now
 
 # Check program output / logs
 journalctl --user -u janitor.service --follow
+
+# Update when using systemd
+systemctl --user stop janitor.service
+cargo install janitor-service
+systemctl --user start janitor.service
 ```
