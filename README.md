@@ -14,8 +14,6 @@ cargo install janitor-service
 2. a `janitor.toml` file would be created in your downloads directory
 3. update the toml file with patterns and destinations - examples entry can be used as reference - patterns are comma separated tuples
 
-fun fact: this is my first ever rust app
-
 ## Configuring Auto Start/Restart with SystemD (Not available on Windows)
 
 ```bash
@@ -32,3 +30,6 @@ journalctl --user -u janitor.service --follow
 cargo install janitor-service
 systemctl --user restart janitor.service
 ```
+
+---
+fun fact: this is my first ever rust app
