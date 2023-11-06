@@ -22,7 +22,6 @@ lazy_static! {
     static ref CONFIG: Mutex<JanitorConfig> = Mutex::new(read_config());
     static ref TRAY: Mutex<TrayItem> =
         Mutex::new(TrayItem::new("Janitor", get_app_icon()).unwrap());
-    static ref SYSTEMD: bool = env::var("SYSTEMD").is_ok();
 }
 
 fn main() {
@@ -37,7 +36,7 @@ fn main() {
         }
     }
 
-    if *SYSTEMD {
+    if is_systemd() {
         println!(
             "{} v{} running under systemd",
             env!("CARGO_PKG_NAME"),
@@ -80,6 +79,10 @@ fn main() {
             _ => {}
         }
     }
+}
+
+fn is_systemd() -> bool {
+    env::var("SYSTEMD").is_ok()
 }
 
 fn refresh_config() {
@@ -233,7 +236,7 @@ fn move_file(from: PathBuf, to: PathBuf) -> Result<(), std::io::Error> {
 fn setup_tray() -> std::sync::mpsc::Receiver<TrayMessage> {
     let mut tray = TRAY.lock().unwrap();
 
-    if !*SYSTEMD {
+    if is_systemd() {
         tray.add_label(
             format!("{} v{}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION")).as_str(),
         )
@@ -255,7 +258,7 @@ fn setup_tray() -> std::sync::mpsc::Receiver<TrayMessage> {
     #[cfg(all(target_os = "windows"))]
     tray.inner_mut().add_separator().unwrap();
 
-    if !*SYSTEMD {
+    if is_systemd() {
         let quit_tx = tx.clone();
         tray.add_menu_item("Quit", move || {
             quit_tx.send(TrayMessage::Quit).unwrap();
