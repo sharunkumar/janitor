@@ -236,7 +236,7 @@ fn move_file(from: PathBuf, to: PathBuf) -> Result<(), std::io::Error> {
 fn setup_tray() -> std::sync::mpsc::Receiver<TrayMessage> {
     let mut tray = TRAY.lock().unwrap();
 
-    if is_systemd() {
+    if !is_systemd() {
         tray.add_label(
             format!("{} v{}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION")).as_str(),
         )
@@ -258,7 +258,7 @@ fn setup_tray() -> std::sync::mpsc::Receiver<TrayMessage> {
     #[cfg(all(target_os = "windows"))]
     tray.inner_mut().add_separator().unwrap();
 
-    if is_systemd() {
+    if !is_systemd() {
         let quit_tx = tx.clone();
         tray.add_menu_item("Quit", move || {
             quit_tx.send(TrayMessage::Quit).unwrap();
