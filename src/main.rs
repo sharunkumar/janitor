@@ -258,13 +258,11 @@ fn setup_tray() -> std::sync::mpsc::Receiver<TrayMessage> {
     #[cfg(all(target_os = "windows"))]
     tray.inner_mut().add_separator().unwrap();
 
-    if !is_systemd() {
-        let quit_tx = tx.clone();
-        tray.add_menu_item("Quit", move || {
-            quit_tx.send(TrayMessage::Quit).unwrap();
-        })
-        .unwrap();
-    }
+    let quit_tx = tx.clone();
+    tray.add_menu_item("Quit", move || {
+        quit_tx.send(TrayMessage::Quit).unwrap();
+    })
+    .unwrap();
 
     rx
 }
