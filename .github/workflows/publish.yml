@@ -20,6 +20,7 @@ jobs:
                 sudo apt install libdbus-1-dev pkg-config
                 cargo install cargo-bump
                 cargo bump
+                cargo update
                 git config --global user.email "sharunksplus@gmail.com"
                 git config --global user.name "Sharun"
                 git add . && git commit -m "bump version" && git push
