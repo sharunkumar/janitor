@@ -23,7 +23,7 @@ jobs:
                 cargo install cargo-bump
                 cargo bump
                 cargo update
-                git add . && git commit -m "bump version" && git push
-                cargo publish
+                git add . && git commit -m "bump version"
+                cargo publish && git push
               
             
