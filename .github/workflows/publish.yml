@@ -1,0 +1,27 @@
+name: packer build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+
+jobs:
+    publish-package:
+        runs-on: ubuntu-latest
+        name: Publish Crate
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v3
+
+            - name: Setup Cache
+              uses: Swatinem/rust-cache@v2
+
+            - name: Cargo Bump & Publish
+              run: |
+                cargo install cargo-bump
+                cargo bump
+                git add . && git commit -m "bump version" && git push
+                cargo publish
+              
+            
