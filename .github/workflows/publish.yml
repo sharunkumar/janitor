@@ -11,7 +11,7 @@ jobs:
         runs-on: ubuntu-latest
         name: Publish Crate
         steps:
-            - uses: actions/checkout@v3
+            - uses: actions/checkout@v4
             - uses: Swatinem/rust-cache@v2
             - name: Cargo Bump & Publish
               env:
