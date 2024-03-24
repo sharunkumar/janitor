@@ -227,8 +227,7 @@ fn move_file(from: PathBuf, to: PathBuf) -> Result<(), std::io::Error> {
     fs::rename(&from, &to).or_else(|_| {
         // try copy and delete if that does not work
         fs::copy(&from, &to).and_then(|_| {
-            fs::remove_file(&from).unwrap();
-            Ok(())
+            fs::remove_file(&from).and_then(|_| Ok(()))
         })
     })
 }
