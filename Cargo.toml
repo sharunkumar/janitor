@@ -20,10 +20,10 @@ single-instance = "0.3.3"
 toml = "0.8.19"
 
 [target.'cfg(windows)'.dependencies]
-tray-item = { version = "0.9.0" }
+tray-item = { version = "0.10.0" }
 
 [target.'cfg(windows)'.build-dependencies]
 windres = "0.2.2"
 
 [target.'cfg(not(windows))'.dependencies]
-tray-item = { version = "0.9.0", features = ["ksni"] }
+tray-item = { version = "0.10.0", features = ["ksni"] }
