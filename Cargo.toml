@@ -1,6 +1,6 @@
 [package]
 name = "janitor-service"
-version = "0.1.28"
+version = "0.1.29"
 edition = "2021"
 description = "A service that cleans up your downloads folder"
 license = "MIT"
