@@ -1295,9 +1295,9 @@ checksum = "ef927ca75afb808a4d64dd374f00a2adf8d0fcff8e7b184af886c3c87ec4a3f3"
 
 [[package]]
 name = "toml"
-version = "0.8.19"
+version = "0.8.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a1ed1f98e3fdc28d6d910e6737ae6ab1a93bf1985935a1193e68f93eeb68d24e"
+checksum = "cd87a5cdd6ffab733b2f74bc4fd7ee5fff6634124999ac278c35fc78c6120148"
 dependencies = [
  "serde",
  "serde_spanned",
@@ -1316,15 +1316,15 @@ dependencies = [
 
 [[package]]
 name = "toml_edit"
-version = "0.22.22"
+version = "0.22.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ae48d6208a266e853d946088ed816055e556cc6028c5e8e2b84d9fa5dd7c7f5"
+checksum = "02a8b472d1a3d7c18e2d61a489aee3453fd9031c33e4f55bd533f4a7adca1bee"
 dependencies = [
  "indexmap",
  "serde",
  "serde_spanned",
  "toml_datetime",
- "winnow",
+ "winnow 0.7.1",
 ]
 
 [[package]]
@@ -1621,6 +1621,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "winnow"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "86e376c75f4f43f44db463cf729e0d3acbf954d13e22c51e26e4c264b4ab545f"
+dependencies = [
+ "memchr",
+]
+
+[[package]]
 name = "winreg"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1675,7 +1684,7 @@ dependencies = [
  "tracing",
  "uds_windows",
  "windows-sys 0.59.0",
- "winnow",
+ "winnow 0.6.20",
  "xdg-home",
  "zbus_macros",
  "zbus_names",
@@ -1705,7 +1714,7 @@ checksum = "519629a3f80976d89c575895b05677cbc45eaf9f70d62a364d819ba646409cc8"
 dependencies = [
  "serde",
  "static_assertions",
- "winnow",
+ "winnow 0.6.20",
  "zvariant",
 ]
 
@@ -1719,7 +1728,7 @@ dependencies = [
  "enumflags2",
  "serde",
  "static_assertions",
- "winnow",
+ "winnow 0.6.20",
  "zvariant_derive",
  "zvariant_utils",
 ]
@@ -1748,5 +1757,5 @@ dependencies = [
  "serde",
  "static_assertions",
  "syn",
- "winnow",
+ "winnow 0.6.20",
 ]
