@@ -226,9 +226,7 @@ fn move_file(from: PathBuf, to: PathBuf) -> Result<(), std::io::Error> {
     // thread::sleep(Duration::from_secs(2));
     fs::rename(&from, &to).or_else(|_| {
         // try copy and delete if that does not work
-        fs::copy(&from, &to).and_then(|_| {
-            fs::remove_file(&from).and_then(|_| Ok(()))
-        })
+        fs::copy(&from, &to).and_then(|_| fs::remove_file(&from).and_then(|_| Ok(())))
     })
 }
 
