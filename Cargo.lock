@@ -488,7 +488,7 @@ dependencies = [
  "directories",
  "glob",
  "lazy_static",
- "notify 9.0.0",
+ "notify",
  "notify-debouncer-mini",
  "notify-rust",
  "serde",
@@ -670,25 +670,6 @@ dependencies = [
 
 [[package]]
 name = "notify"
-version = "8.2.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c41a04a5f59df9322cc657286dd2d79f90816119b22c5f847607c850110205ab"
-dependencies = [
- "bitflags 2.13.2",
- "inotify",
- "kqueue",
- "libc",
- "log",
- "mio",
- "notify-types",
- "objc2-core-foundation",
- "objc2-core-services",
- "walkdir",
- "windows-sys 0.61.2",
-]
-
-[[package]]
-name = "notify"
 version = "9.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5482d5bd11b91a337521980e5d52fe115bdccfb4c217099daaf0abd69159dc4e"
@@ -709,14 +690,13 @@ dependencies = [
 
 [[package]]
 name = "notify-debouncer-mini"
-version = "0.7.0"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "17849edfaabd9a5fef1c606d99cfc615a8e99f7ac4366406d86c7942a3184cf2"
+checksum = "2ce20d2a4f7b6929982f96f746c979fbb7450194350c88694b398aec6b73eae2"
 dependencies = [
  "log",
- "notify 8.2.2",
+ "notify",
  "notify-types",
- "tempfile",
 ]
 
 [[package]]
